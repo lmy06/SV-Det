@@ -27,21 +27,21 @@ fi
 echo "$CALLER start now " 
 echo `date`
 
-#把参数重新命名
+
 ref = $1
 tumorBam = $2
 normalBam = $3
 
 
 ***************************************************************
-#使用Crest检测成对样本的结构变异，生成的结果文件在当前目录下的Crest文件夹下
+#Crest
 ***************************************************************
 
 perl CREST/extractSClip.pl -i $tumorBam --ref_genome $ref -o Crest/ 
 perl CREST/CREST.pl --blatserver cngb-oxcompute-1 --blatport 9002 -f Crest/$tumorBam\.cover -d $tumorBam -g $normalBam --ref_genome $ref -t /hwfssz1/ST_CANCER/POL/SHARE/DataBase/hg19/GATKv2.8_bundle/ucsc.hg19.2bit -o Crest/
 
 ***************************************************************
-#使用Delly检测成对样本的结构变异,Delly 5种结构变异(DEL, DUP, INV, TRA, INS)需要分开检测，且需要提供样品成对信息samples.tsv文件:样品名\tTumor/control格式
+#Delly(DEL, DUP, INV, TRA, INS)
 ***************************************************************
 
 delly_parallel_linux_x86_64bit call -t INV -g $ref -o Delly/INV.bcf $tumorBam $normalBam
@@ -67,7 +67,7 @@ bcftools view Delly/DUP.filter.bcf |grep -v \# >Delly/DUP.filter.vcf
 cat Delly/INV.filter.vcf Delly/INS.filter.vcf Delly/TRA.filter.vcf Delly/DEL.filter.vcf Delly/DUP.filter.vcf > Delly/somatic.vcf
 
 ***************************************************************
-#使用Lumpy检测成对样本的结构变异，需要对bam进行预处理
+#Lumpy
 ***************************************************************
 
 # Extract the discordant paired-end alignments
@@ -87,13 +87,13 @@ samtools sort $tumorBam\.splitters.unsorted.bam $tumorBam\.splitters.bam
 lumpy-sv/bin/lumpyexpress -B $tumorBam,$normalBam -S $tumorBam\.splitters.bam,$normalBam\.splitters.bam -D $tumorBam\.discordants.bam,$normalBam\.discordants.bam -o tumor_normal.vcf
 
 ***************************************************************
-#使用Manta检测成对样本的结构变异，生成的结果文件在当前目录下的Manta文件夹下
+#Manta
 ***************************************************************
 
 manta.centos5_x86_64/bin/configManta.py --normalBam $normalBam --tumorBam $tumorBam --referenceFasta $ref --runDir Manta/
 
 ***************************************************************
-#使用novoBreak检测成对样本的结构变异，生成的结果文件在当前目录下的novoBreak文件夹下
+#novoBreak
 
 sh novoBreak_distribution/run_novoBreak.sh novoBreak_distribution/ $ref $tumorBam $normalBam novoBreak/
 
